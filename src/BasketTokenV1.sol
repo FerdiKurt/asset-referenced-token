@@ -1,0 +1,88 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+
+/**
+ * @title BasketToken
+ * @dev A token pegged to a basket of assets including gold, BTC, and USDC with enhanced precision
+ */
+contract BasketToken is ERC20, Ownable {
+    // Custom errors
+    error InvalidBasketComposition();
+    error ZeroAmount();
+    error InsufficientBalance();
+    error InsufficientContractBalance();
+    error EthTransferFailed();
+    error FeeTooHigh();
+    error CollateralRatioTooLow();
+    error NoEthSent();
+    error PrecisionLoss();
+
+    // Price feed interfaces
+    AggregatorV3Interface public immutable goldPriceFeed;
+    AggregatorV3Interface public immutable btcPriceFeed;
+    AggregatorV3Interface public immutable usdcPriceFeed;
+    
+    // Basket composition (in basis points, total should be 10000)
+    uint16 public goldPercentage = 4000; // 40%
+    uint16 public btcPercentage = 4000;  // 40%
+    uint16 public usdcPercentage = 2000; // 20%
+    
+    // USD price feed for conversion
+    AggregatorV3Interface public immutable ethusdPriceFeed;
+    
+    // Minimum collateralization ratio (in basis points, 10000 = 100%)
+    uint16 public collateralRatio = 12000; // 120%
+    
+    // Fees (in basis points, 100 = 1%)
+    uint16 public mintFee = 50;  // 0.5%
+    uint16 public burnFee = 50;  // 0.5%
+    
+    // Total value of assets in USD (scaled by EXTENDED_PRECISION)
+    uint256 public totalBasketValueInUSD;
+
+    // Constants
+    uint256 private constant BASIS_POINTS = 10000;
+    uint256 private constant PRICE_FEED_DECIMALS = 1e10; // Convert from 8 to 18 decimals
+    uint256 private constant STANDARD_PRECISION = 1e18;  // Standard ERC20 decimals
+    uint256 private constant EXTENDED_PRECISION = 1e27;  // Extended precision for calculations
+    uint256 private constant PRECISION_FACTOR = 1e9;     // Factor to adjust from 18 to 27 decimals
+    
+    // Events
+    event Minted(address indexed user, uint256 tokenAmount, uint256 ethAmount);
+    event Burned(address indexed user, uint256 tokenAmount, uint256 ethAmount);
+    event BasketUpdated(uint16 goldPercentage, uint16 btcPercentage, uint16 usdcPercentage);
+    event OracleUpdated(address goldOracle, address btcOracle, address usdcOracle, address ethUsdOracle);
+    event FeesUpdated(uint16 mintFee, uint16 burnFee);
+    event CollateralRatioUpdated(uint16 collateralRatio);
+    
+    /**
+     * @dev Constructor
+     * @param _name Token name
+     * @param _symbol Token symbol
+     * @param _goldPriceFeed Address of gold price feed
+     * @param _btcPriceFeed Address of BTC price feed
+     * @param _usdcPriceFeed Address of USDC price feed
+     * @param _ethusdPriceFeed Address of ETH/USD price feed
+     */
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        address _goldPriceFeed,
+        address _btcPriceFeed,
+        address _usdcPriceFeed,
+        address _ethusdPriceFeed
+    ) ERC20(_name, _symbol) Ownable(msg.sender) {
+        goldPriceFeed = AggregatorV3Interface(_goldPriceFeed);
+        btcPriceFeed = AggregatorV3Interface(_btcPriceFeed);
+        usdcPriceFeed = AggregatorV3Interface(_usdcPriceFeed);
+        ethusdPriceFeed = AggregatorV3Interface(_ethusdPriceFeed);
+        
+        if (goldPercentage + btcPercentage + usdcPercentage != BASIS_POINTS) {
+            revert InvalidBasketComposition();
+        }
+    }
+}

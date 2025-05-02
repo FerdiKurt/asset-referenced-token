@@ -163,4 +163,26 @@ contract BasketToken is ERC20, Ownable {
         
         emit Burned(msg.sender, amount, ethToReturn);
     }
+    
+    /**
+    * @dev Get the basket value per token
+    * @return The USD value of the basket per token
+    */
+    function getBasketValuePerToken() public view returns (uint256) {
+        // Convert extended precision value to standard precision for compatibility
+        uint256 extendedValue = getExtendedBasketValuePerToken();
+        return extendedValue / PRECISION_FACTOR;
+    }
+    
+    /**
+    * @dev Get the basket value per token with extended precision
+    * @return The USD value of the basket per token
+    */
+    function getExtendedBasketValuePerToken() public view returns (uint256) {
+        uint256 supply = totalSupply();
+        if (supply == 0) return 0;
+        
+        return (totalBasketValueInUSD * STANDARD_PRECISION) / supply;
+    }
+    
 }

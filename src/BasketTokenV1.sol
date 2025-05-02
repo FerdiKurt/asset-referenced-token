@@ -60,14 +60,14 @@ contract BasketToken is ERC20, Ownable {
     event CollateralRatioUpdated(uint16 collateralRatio);
     
     /**
-     * @dev Constructor
-     * @param _name Token name
-     * @param _symbol Token symbol
-     * @param _goldPriceFeed Address of gold price feed
-     * @param _btcPriceFeed Address of BTC price feed
-     * @param _usdcPriceFeed Address of USDC price feed
-     * @param _ethusdPriceFeed Address of ETH/USD price feed
-     */
+    * @dev Constructor
+    * @param _name Token name
+    * @param _symbol Token symbol
+    * @param _goldPriceFeed Address of gold price feed
+    * @param _btcPriceFeed Address of BTC price feed
+    * @param _usdcPriceFeed Address of USDC price feed
+    * @param _ethusdPriceFeed Address of ETH/USD price feed
+    */
     constructor(
         string memory _name,
         string memory _symbol,
@@ -85,4 +85,48 @@ contract BasketToken is ERC20, Ownable {
             revert InvalidBasketComposition();
         }
     }
+        
+    /**
+    * @dev Receive function to accept ETH
+    */
+    receive() external payable {}
+    
+    /**
+    * @dev Mint new tokens by providing ETH collateral
+    */
+    function mint() external payable {
+        if (msg.value == 0) revert NoEthSent();
+        
+        // Calculate how many tokens to mint based on the current basket value
+        uint256 ethUsdPrice = getEthUsdPrice();
+        
+        // Use extended precision for calculations
+        uint256 ethValueInUsd = (msg.value * ethUsdPrice * PRECISION_FACTOR) / STANDARD_PRECISION;
+        
+        // Apply mint fee
+        uint256 ethValueAfterFee = (ethValueInUsd * (BASIS_POINTS - mintFee)) / BASIS_POINTS;
+        
+        // Calculate token amount based on basket value per token
+        uint256 basketValuePerToken = getExtendedBasketValuePerToken();
+        
+        // Initial value $1 if this is the first mint
+        if (basketValuePerToken == 0) basketValuePerToken = EXTENDED_PRECISION;
+        
+        // Calculate tokens to mint
+        uint256 tokensToMint = (ethValueAfterFee * STANDARD_PRECISION) / basketValuePerToken;
+        
+        // Ensure we don't lose precision
+        if ((tokensToMint * basketValuePerToken) / STANDARD_PRECISION < ethValueAfterFee * 99 / 100) {
+            revert PrecisionLoss();
+        }
+        
+        // Update total basket value
+        totalBasketValueInUSD = totalBasketValueInUSD + ethValueAfterFee;
+        
+        // Mint tokens
+        _mint(msg.sender, tokensToMint);
+        
+        emit Minted(msg.sender, tokensToMint, msg.value);
+    }
+    
 }

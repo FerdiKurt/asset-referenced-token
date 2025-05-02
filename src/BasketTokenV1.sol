@@ -289,4 +289,15 @@ contract BasketToken is ERC20, Ownable {
         emit FeesUpdated(_mintFee, _burnFee);
     }
     
+    /**
+    * @dev Update collateral ratio
+    * @param _collateralRatio New collateral ratio (in basis points)
+    */
+    function updateCollateralRatio(uint16 _collateralRatio) external onlyOwner {
+        if (_collateralRatio < BASIS_POINTS) revert CollateralRatioTooLow(); // Min 100%
+        
+        collateralRatio = _collateralRatio;
+        
+        emit CollateralRatioUpdated(_collateralRatio);
+    }
 }

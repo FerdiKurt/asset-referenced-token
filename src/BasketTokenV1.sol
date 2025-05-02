@@ -216,4 +216,40 @@ contract BasketToken is ERC20, Ownable {
         return calculateExtendedBasketValueInUSD() / PRECISION_FACTOR;
     }
     
+    /**
+    * @dev Get the current gold price in USD from Chainlink
+    * @return Gold price in USD (8 decimals)
+    */
+    function getGoldPrice() public view returns (int256) {
+        (,int256 price,,,) = goldPriceFeed.latestRoundData();
+        return price;
+    }
+    
+    /**
+    * @dev Get the current BTC price in USD from Chainlink
+    * @return BTC price in USD (8 decimals)
+    */
+    function getBtcPrice() public view returns (int256) {
+        (,int256 price,,,) = btcPriceFeed.latestRoundData();
+        return price;
+    }
+    
+    /**
+    * @dev Get the current USDC price in USD from Chainlink
+    * @return USDC price in USD (8 decimals)
+    */
+    function getUsdcPrice() public view returns (int256) {
+        (,int256 price,,,) = usdcPriceFeed.latestRoundData();
+        return price;
+    }
+    
+    /**
+    * @dev Get the current ETH price in USD from Chainlink
+    * @return ETH price in USD (scaled to 1e18)
+    */
+    function getEthUsdPrice() public view returns (uint256) {
+        (,int256 price,,,) = ethusdPriceFeed.latestRoundData();
+        return uint256(price) * PRICE_FEED_DECIMALS; // Convert from 8 to 18 decimals
+    }
+    
 }

@@ -129,4 +129,38 @@ contract BasketToken is ERC20, Ownable {
         emit Minted(msg.sender, tokensToMint, msg.value);
     }
     
+    /**
+    * @dev Burn tokens to get ETH back
+    * @param amount The amount of tokens to burn
+    */
+    function burn(uint256 amount) external {
+        if (amount == 0) revert ZeroAmount();
+        if (balanceOf(msg.sender) < amount) revert InsufficientBalance();
+        
+        // Calculate ETH to return
+        uint256 basketValuePerToken = getExtendedBasketValuePerToken();
+        uint256 valueInUsd = (amount * basketValuePerToken) / STANDARD_PRECISION;
+        
+        // Apply burn fee
+        uint256 valueAfterFee = (valueInUsd * (BASIS_POINTS - burnFee)) / BASIS_POINTS;
+        
+        // Convert USD value to ETH
+        uint256 ethUsdPrice = getEthUsdPrice();
+        uint256 ethUsdPriceExtended = ethUsdPrice * PRECISION_FACTOR;
+        uint256 ethToReturn = (valueAfterFee * STANDARD_PRECISION) / ethUsdPriceExtended;
+        
+        if (address(this).balance < ethToReturn) revert InsufficientContractBalance();
+        
+        // Update total basket value
+        totalBasketValueInUSD = totalBasketValueInUSD - valueInUsd;
+        
+        // Burn tokens before transfer to prevent reentrancy
+        _burn(msg.sender, amount);
+        
+        // Return ETH
+        (bool success, ) = payable(msg.sender).call{value: ethToReturn}("");
+        if (!success) revert EthTransferFailed();
+        
+        emit Burned(msg.sender, amount, ethToReturn);
+    }
 }

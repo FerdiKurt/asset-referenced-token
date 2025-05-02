@@ -274,4 +274,19 @@ contract BasketToken is ERC20, Ownable {
         emit BasketUpdated(_goldPercentage, _btcPercentage, _usdcPercentage);
     }
     
+    /**
+    * @dev Update fees
+    * @param _mintFee New mint fee (in basis points)
+    * @param _burnFee New burn fee (in basis points)
+    */
+    function updateFees(uint16 _mintFee, uint16 _burnFee) external onlyOwner {
+        if (_mintFee > 500) revert FeeTooHigh(); // Max 5%
+        if (_burnFee > 500) revert FeeTooHigh(); // Max 5%
+        
+        mintFee = _mintFee;
+        burnFee = _burnFee;
+        
+        emit FeesUpdated(_mintFee, _burnFee);
+    }
+    
 }

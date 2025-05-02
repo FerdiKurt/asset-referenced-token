@@ -252,4 +252,26 @@ contract BasketToken is ERC20, Ownable {
         return uint256(price) * PRICE_FEED_DECIMALS; // Convert from 8 to 18 decimals
     }
     
+    /**
+    * @dev Update basket composition
+    * @param _goldPercentage New gold percentage (in basis points)
+    * @param _btcPercentage New BTC percentage (in basis points)
+    * @param _usdcPercentage New USDC percentage (in basis points)
+    */
+    function updateBasketComposition(
+        uint16 _goldPercentage, 
+        uint16 _btcPercentage,
+        uint16 _usdcPercentage
+    ) external onlyOwner {
+        if (_goldPercentage + _btcPercentage + _usdcPercentage != BASIS_POINTS) {
+            revert InvalidBasketComposition();
+        }
+        
+        goldPercentage = _goldPercentage;
+        btcPercentage = _btcPercentage;
+        usdcPercentage = _usdcPercentage;
+        
+        emit BasketUpdated(_goldPercentage, _btcPercentage, _usdcPercentage);
+    }
+    
 }

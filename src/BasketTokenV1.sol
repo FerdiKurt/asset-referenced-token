@@ -185,4 +185,35 @@ contract BasketToken is ERC20, Ownable {
         return (totalBasketValueInUSD * STANDARD_PRECISION) / supply;
     }
     
+    /**
+    * @dev Calculate the value of the basket in USD with extended precision
+    * @return The USD value of the basket
+    */
+    function calculateExtendedBasketValueInUSD() public view returns (uint256) {
+        // Get asset prices in USD (Chainlink returns prices with 8 decimals)
+        uint256 goldPriceUsd = uint256(getGoldPrice());
+        uint256 btcPriceUsd = uint256(getBtcPrice());
+        uint256 usdcPriceUsd = uint256(getUsdcPrice());
+        
+        // Scale all prices to extended precision
+        goldPriceUsd = goldPriceUsd * PRICE_FEED_DECIMALS * PRECISION_FACTOR;
+        btcPriceUsd = btcPriceUsd * PRICE_FEED_DECIMALS * PRECISION_FACTOR;
+        usdcPriceUsd = usdcPriceUsd * PRICE_FEED_DECIMALS * PRECISION_FACTOR;
+        
+        // Calculate basket value with extended precision
+        uint256 goldValue = (goldPriceUsd * goldPercentage) / BASIS_POINTS;
+        uint256 btcValue = (btcPriceUsd * btcPercentage) / BASIS_POINTS;
+        uint256 usdcValue = (usdcPriceUsd * usdcPercentage) / BASIS_POINTS;
+        
+        return goldValue + btcValue + usdcValue;
+    }
+    
+    /**
+    * @dev Calculate the value of the basket in USD
+    * @return The USD value of the basket
+    */
+    function calculateBasketValueInUSD() public view returns (uint256) {
+        return calculateExtendedBasketValueInUSD() / PRECISION_FACTOR;
+    }
+    
 }

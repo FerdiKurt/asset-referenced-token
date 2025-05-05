@@ -116,4 +116,19 @@ contract BasketTokenTest is Test {
         assertEq(basketToken.owner(), owner);
     }
     
+    // Test basket value calculation
+    function testCalculateBasketValue() public view {
+        // Calculated expected basket value
+        // Gold: $2,000 * 40% = $800
+        // BTC: $70,000 * 40% = $28,000
+        // USDC: $1.00 * 20% = $0.20
+        // Total: $28,800.20 or approximately $28,800
+        
+        uint256 expectedBasketValue = 28800 * 10**18; // Convert to 18 decimals
+        uint256 calculatedBasketValue = basketToken.calculateBasketValueInUSD();
+        
+        // Allow for a small precision error due to calculations
+        assertApproxEqRel(calculatedBasketValue, expectedBasketValue, 0.01e18); // 1% tolerance
+    }
+    
 }

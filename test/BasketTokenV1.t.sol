@@ -131,4 +131,58 @@ contract BasketTokenTest is Test {
         assertApproxEqRel(calculatedBasketValue, expectedBasketValue, 0.01e18); // 1% tolerance
     }
     
+    // Test minting tokens
+    function testMint() public {
+        uint256 ethToDeposit = 1 ether;
+        
+        vm.startPrank(alice);
+        
+        uint256 initialBalance = alice.balance;
+        basketToken.mint{value: ethToDeposit}();
+        
+        // Get actual tokens minted
+        uint256 actualTokens = basketToken.balanceOf(alice);
+        
+        // Let's calculate the expected tokens manually to verify
+        // 1 ETH = $4,500 (initialEthUsdPrice * 10^10 = 4500 * 10^18)
+        // After 0.5% fee: $4,500 * 0.995 = $4,477.50
+        // First mint sets basket value at $1, so expected tokens ≈ 4,477.50 * 10^18
+        
+        uint256 ethUsdPrice = uint256(initialEthUsdPrice) * 10**10; // Convert to 18 decimals
+        uint256 ethValueInUsd = (ethToDeposit * ethUsdPrice) / 10**18;
+        uint256 ethValueAfterFee = (ethValueInUsd * (BASIS_POINTS - 50)) / BASIS_POINTS; // 0.5% fee
+        
+        // For first mint, we expect approximately the USD value in tokens
+        assertApproxEqRel(actualTokens, ethValueAfterFee, 0.05e18); // 5% tolerance
+        
+        // Check other balances
+        assertEq(alice.balance, initialBalance - ethToDeposit);
+        assertEq(address(basketToken).balance, ethToDeposit);
+        
+        vm.stopPrank();
+    }
+    
+    // Test multiple mints
+    function testMultipleMints() public {
+        // First mint
+        vm.startPrank(alice);
+        basketToken.mint{value: 1 ether}();
+        uint256 aliceBalance = basketToken.balanceOf(alice);
+        vm.stopPrank();
+        
+        // Second mint from a different user
+        vm.startPrank(bob);
+        basketToken.mint{value: 2 ether}();
+        uint256 bobBalance = basketToken.balanceOf(bob);
+        vm.stopPrank();
+        
+        // Bob should have roughly twice as many tokens as Alice
+        assertApproxEqRel(bobBalance, aliceBalance * 2, 0.05e18); // 5% tolerance
+        
+        // Total supply should be sum of balances
+        assertEq(basketToken.totalSupply(), aliceBalance + bobBalance);
+        
+        // Contract should have 3 ETH
+        assertEq(address(basketToken).balance, 3 ether);
+    }
 }

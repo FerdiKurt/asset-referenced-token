@@ -206,4 +206,29 @@ contract BasketTokenTest is Test {
         vm.stopPrank();
     }
     
+    // Test complete mint and burn cycle
+    function testFullMintBurnCycle() public {
+        vm.startPrank(alice);
+        
+        // Mint tokens
+        uint256 initialEthBalance = alice.balance;
+        basketToken.mint{value: 1 ether}();
+        uint256 tokensReceived = basketToken.balanceOf(alice);
+        
+        // Burn all tokens
+        basketToken.burn(tokensReceived);
+        
+        // Check final state
+        assertEq(basketToken.balanceOf(alice), 0);
+        uint256 finalEthBalance = alice.balance;
+        
+        // Due to fees, Alice should have less ETH than she started with
+        assertLt(finalEthBalance, initialEthBalance);
+        // But she should have most of it back (minus two fees of 0.5% each)
+        uint256 expectedLoss = 2 * 0.005 * 1 ether; // Approximate loss from two 0.5% fees
+        assertApproxEqAbs(finalEthBalance, initialEthBalance - expectedLoss, 0.01 ether);
+        
+        vm.stopPrank();
+    }
+    
 }

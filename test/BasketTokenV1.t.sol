@@ -339,32 +339,39 @@ contract BasketTokenTest is Test {
         basketToken.updateCollateralRatio(insufficientRatio);
     }
     
-    // // Test failures
-    // function testFailMintZero() public {
-    //     vm.prank(alice);
-    //     basketToken.mint{value: 0}(); // Should revert with NoEthSent error
-    // }
+    // Test failures
+    function testRevertMintZero() public {
+        vm.prank(alice);
+        // Expect a revert with the NoEthSent error
+        vm.expectRevert(BasketToken.NoEthSent.selector);
+        basketToken.mint{value: 0}(); 
+    }
     
-    // function testFailBurnZero() public {
-    //     vm.prank(alice);
-    //     basketToken.burn(0); // Should revert with ZeroAmount error
-    // }
+    function testRevertBurnZero() public {
+        vm.prank(alice);
+        // Expect a revert with the ZeroAmount error
+        vm.expectRevert(BasketToken.ZeroAmount.selector);
+        basketToken.burn(0);
+    }
     
-    // function testFailBurnTooMuch() public {
-    //     vm.prank(alice);
-    //     basketToken.mint{value: 1 ether}();
-    //     uint256 balance = basketToken.balanceOf(alice);
+    function testRevertBurnTooMuch() public {
+        // First mint some tokens
+        vm.prank(alice);
+        basketToken.mint{value: 1 ether}();
+        uint256 balance = basketToken.balanceOf(alice);
         
-    //     vm.prank(alice);
-    //     basketToken.burn(balance + 1); // Should revert with InsufficientBalance error
-    // }
+        vm.prank(alice);
+        // Expect a revert with the InsufficientBalance error
+        vm.expectRevert(BasketToken.InsufficientBalance.selector);
+        basketToken.burn(balance + 1); 
+    }
     
-    // function testFailInvalidBasketComposition() public {
-    //     // Total percentage should be 10000 basis points (100%)
-    //     vm.prank(owner);
-    //     vm.expectRevert(BasketToken.InvalidBasketComposition.selector);
-    //     basketToken.updateBasketComposition(4000, 4000, 3000); // Total is 110%
-    // }
+    function testRevertInvalidBasketComposition() public {
+        // Total percentage should be 10000 basis points (100%)
+        vm.prank(owner);
+        vm.expectRevert(BasketToken.InvalidBasketComposition.selector);
+        basketToken.updateBasketComposition(4000, 4000, 3000); // Total is 110%
+    }
     
     // // Test complex scenario with price changes
     // function testPriceChangesScenario() public {

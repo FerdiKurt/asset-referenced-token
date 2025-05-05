@@ -280,64 +280,64 @@ contract BasketTokenTest is Test {
         assertApproxEqAbs(valuePerToken, 1 ether, 0.1 ether);
     }
     
-    // // Test admin functions
-    // function testUpdateBasketComposition() public {
-    //     uint16 newGoldPercentage = 3000;
-    //     uint16 newBtcPercentage = 3000;
-    //     uint16 newUsdcPercentage = 4000;
+    // Test admin functions
+    function testUpdateBasketComposition() public {
+        uint16 newGoldPercentage = 3000;
+        uint16 newBtcPercentage = 3000;
+        uint16 newUsdcPercentage = 4000;
         
-    //     // Only owner can update
-    //     vm.prank(alice);
-    //     vm.expectRevert();
-    //     basketToken.updateBasketComposition(newGoldPercentage, newBtcPercentage, newUsdcPercentage);
+        // Only owner can update
+        vm.prank(alice);
+        vm.expectRevert();
+        basketToken.updateBasketComposition(newGoldPercentage, newBtcPercentage, newUsdcPercentage);
         
-    //     // Owner updates successfully
-    //     vm.prank(owner);
-    //     basketToken.updateBasketComposition(newGoldPercentage, newBtcPercentage, newUsdcPercentage);
+        // Owner updates successfully
+        vm.prank(owner);
+        basketToken.updateBasketComposition(newGoldPercentage, newBtcPercentage, newUsdcPercentage);
         
-    //     // Check new values
-    //     assertEq(basketToken.goldPercentage(), newGoldPercentage);
-    //     assertEq(basketToken.btcPercentage(), newBtcPercentage);
-    //     assertEq(basketToken.usdcPercentage(), newUsdcPercentage);
-    // }
+        // Check new values
+        assertEq(basketToken.goldPercentage(), newGoldPercentage);
+        assertEq(basketToken.btcPercentage(), newBtcPercentage);
+        assertEq(basketToken.usdcPercentage(), newUsdcPercentage);
+    }
     
-    // // Test update fees
-    // function testUpdateFees() public {
-    //     uint16 newMintFee = 100; // 1%
-    //     uint16 newBurnFee = 100; // 1%
+    // Test update fees
+    function testUpdateFees() public {
+        uint16 newMintFee = 100; // 1%
+        uint16 newBurnFee = 100; // 1%
         
-    //     // Owner updates successfully
-    //     vm.prank(owner);
-    //     basketToken.updateFees(newMintFee, newBurnFee);
+        // Owner updates successfully
+        vm.prank(owner);
+        basketToken.updateFees(newMintFee, newBurnFee);
         
-    //     // Check new values
-    //     assertEq(basketToken.mintFee(), newMintFee);
-    //     assertEq(basketToken.burnFee(), newBurnFee);
+        // Check new values
+        assertEq(basketToken.mintFee(), newMintFee);
+        assertEq(basketToken.burnFee(), newBurnFee);
         
-    //     // Test fee limit
-    //     uint16 excessiveFee = 600; // 6%, above 5% limit
-    //     vm.prank(owner);
-    //     vm.expectRevert(BasketToken.FeeTooHigh.selector);
-    //     basketToken.updateFees(excessiveFee, newBurnFee);
-    // }
+        // Test fee limit
+        uint16 excessiveFee = 600; // 6%, above 5% limit
+        vm.prank(owner);
+        vm.expectRevert(BasketToken.FeeTooHigh.selector);
+        basketToken.updateFees(excessiveFee, newBurnFee);
+    }
     
-    // // Test update collateral ratio
-    // function testUpdateCollateralRatio() public {
-    //     uint16 newCollateralRatio = 15000; // 150%
+    // Test update collateral ratio
+    function testUpdateCollateralRatio() public {
+        uint16 newCollateralRatio = 15000; // 150%
         
-    //     // Owner updates successfully
-    //     vm.prank(owner);
-    //     basketToken.updateCollateralRatio(newCollateralRatio);
+        // Owner updates successfully
+        vm.prank(owner);
+        basketToken.updateCollateralRatio(newCollateralRatio);
         
-    //     // Check new value
-    //     assertEq(basketToken.collateralRatio(), newCollateralRatio);
+        // Check new value
+        assertEq(basketToken.collateralRatio(), newCollateralRatio);
         
-    //     // Test minimum limit
-    //     uint16 insufficientRatio = 9000; // 90%, below 100% minimum
-    //     vm.prank(owner);
-    //     vm.expectRevert(BasketToken.CollateralRatioTooLow.selector);
-    //     basketToken.updateCollateralRatio(insufficientRatio);
-    // }
+        // Test minimum limit
+        uint16 insufficientRatio = 9000; // 90%, below 100% minimum
+        vm.prank(owner);
+        vm.expectRevert(BasketToken.CollateralRatioTooLow.selector);
+        basketToken.updateCollateralRatio(insufficientRatio);
+    }
     
     // // Test failures
     // function testFailMintZero() public {

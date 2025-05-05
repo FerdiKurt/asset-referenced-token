@@ -104,4 +104,16 @@ contract BasketTokenTest is Test {
         vm.deal(alice, 10 ether);
         vm.deal(bob, 10 ether);
     }
+    // Test initial state
+    function testInitialState() public view {
+        assertEq(basketToken.name(), "Basket Token");
+        assertEq(basketToken.symbol(), "BSKT");
+        assertEq(basketToken.goldPercentage(), GOLD_PERCENTAGE);
+        assertEq(basketToken.btcPercentage(), BTC_PERCENTAGE);
+        assertEq(basketToken.usdcPercentage(), USDC_PERCENTAGE);
+        assertEq(basketToken.totalSupply(), 0);
+        assertEq(basketToken.totalBasketValueInUSD(), 0);
+        assertEq(basketToken.owner(), owner);
+    }
+    
 }

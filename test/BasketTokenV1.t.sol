@@ -185,4 +185,25 @@ contract BasketTokenTest is Test {
         // Contract should have 3 ETH
         assertEq(address(basketToken).balance, 3 ether);
     }
+        
+    // Test burning tokens
+    function testBurn() public {
+        // First mint some tokens
+        vm.startPrank(alice);
+        basketToken.mint{value: 1 ether}();
+        uint256 tokensToburn = basketToken.balanceOf(alice) / 2; // Burn half the tokens
+        
+        uint256 initialEthBalance = alice.balance;
+        
+        // Burn tokens
+        basketToken.burn(tokensToburn);
+        
+        // Check balances
+        uint256 expectedTokensLeft = basketToken.balanceOf(alice);
+        assertApproxEqRel(expectedTokensLeft, tokensToburn, 0.01e18); // Should have half left
+        assertGt(alice.balance, initialEthBalance); // Should have received ETH back
+        
+        vm.stopPrank();
+    }
+    
 }

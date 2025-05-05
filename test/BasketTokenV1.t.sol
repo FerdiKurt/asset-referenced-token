@@ -231,4 +231,187 @@ contract BasketTokenTest is Test {
         vm.stopPrank();
     }
     
+    // Test basket value calculation
+    function testBasketValueCalculation() public {        
+        // Get the initial prices
+        int256 goldPrice = basketToken.getGoldPrice();
+        int256 btcPrice = basketToken.getBtcPrice();
+        int256 usdcPrice = basketToken.getUsdcPrice();
+        
+        // First, double the gold price
+        int256 newGoldPrice = goldPrice * 2;
+        goldPriceFeed.setPrice(newGoldPrice);
+        
+        // Now calculate the expected basket value using the same formula as the contract
+        uint256 PRICE_FEED_DECIMALS = 10**10; // Convert from 8 to 18 decimals
+        uint256 PRECISION_FACTOR = 10**9;     // Factor to adjust from 18 to 27 decimals
+        
+        // Scale all prices to extended precision
+        uint256 goldPriceUsd = uint256(newGoldPrice) * PRICE_FEED_DECIMALS * PRECISION_FACTOR;
+        uint256 btcPriceUsd = uint256(btcPrice) * PRICE_FEED_DECIMALS * PRECISION_FACTOR;
+        uint256 usdcPriceUsd = uint256(usdcPrice) * PRICE_FEED_DECIMALS * PRECISION_FACTOR;
+        
+        // Calculate basket value with extended precision
+        uint256 goldValue = (goldPriceUsd * GOLD_PERCENTAGE) / BASIS_POINTS;
+        uint256 btcValue = (btcPriceUsd * BTC_PERCENTAGE) / BASIS_POINTS;
+        uint256 usdcValue = (usdcPriceUsd * USDC_PERCENTAGE) / BASIS_POINTS;
+        
+        uint256 expectedBasketValueExtended = goldValue + btcValue + usdcValue;
+        uint256 expectedBasketValue = expectedBasketValueExtended / PRECISION_FACTOR;
+        
+        // Get the actual value from the contract
+        uint256 actualNewBasketValue = basketToken.calculateBasketValueInUSD();
+        
+        // Now test with a small absolute difference allowed
+        assertApproxEqAbs(actualNewBasketValue, expectedBasketValue, 1e17);
+    }
+
+    // Test token value after mint
+    function testTokenValueAfterMint() public {
+        // Mint tokens
+        vm.prank(alice);
+        basketToken.mint{value: 1 ether}();
+        
+        // Get token value after mint
+        uint256 valuePerToken = basketToken.getBasketValuePerToken();
+        console.log("Token value after first mint:", valuePerToken);
+        
+        // First mint should establish value at approximately $1
+        assertApproxEqAbs(valuePerToken, 1 ether, 0.1 ether);
+    }
+    
+    // // Test admin functions
+    // function testUpdateBasketComposition() public {
+    //     uint16 newGoldPercentage = 3000;
+    //     uint16 newBtcPercentage = 3000;
+    //     uint16 newUsdcPercentage = 4000;
+        
+    //     // Only owner can update
+    //     vm.prank(alice);
+    //     vm.expectRevert();
+    //     basketToken.updateBasketComposition(newGoldPercentage, newBtcPercentage, newUsdcPercentage);
+        
+    //     // Owner updates successfully
+    //     vm.prank(owner);
+    //     basketToken.updateBasketComposition(newGoldPercentage, newBtcPercentage, newUsdcPercentage);
+        
+    //     // Check new values
+    //     assertEq(basketToken.goldPercentage(), newGoldPercentage);
+    //     assertEq(basketToken.btcPercentage(), newBtcPercentage);
+    //     assertEq(basketToken.usdcPercentage(), newUsdcPercentage);
+    // }
+    
+    // // Test update fees
+    // function testUpdateFees() public {
+    //     uint16 newMintFee = 100; // 1%
+    //     uint16 newBurnFee = 100; // 1%
+        
+    //     // Owner updates successfully
+    //     vm.prank(owner);
+    //     basketToken.updateFees(newMintFee, newBurnFee);
+        
+    //     // Check new values
+    //     assertEq(basketToken.mintFee(), newMintFee);
+    //     assertEq(basketToken.burnFee(), newBurnFee);
+        
+    //     // Test fee limit
+    //     uint16 excessiveFee = 600; // 6%, above 5% limit
+    //     vm.prank(owner);
+    //     vm.expectRevert(BasketToken.FeeTooHigh.selector);
+    //     basketToken.updateFees(excessiveFee, newBurnFee);
+    // }
+    
+    // // Test update collateral ratio
+    // function testUpdateCollateralRatio() public {
+    //     uint16 newCollateralRatio = 15000; // 150%
+        
+    //     // Owner updates successfully
+    //     vm.prank(owner);
+    //     basketToken.updateCollateralRatio(newCollateralRatio);
+        
+    //     // Check new value
+    //     assertEq(basketToken.collateralRatio(), newCollateralRatio);
+        
+    //     // Test minimum limit
+    //     uint16 insufficientRatio = 9000; // 90%, below 100% minimum
+    //     vm.prank(owner);
+    //     vm.expectRevert(BasketToken.CollateralRatioTooLow.selector);
+    //     basketToken.updateCollateralRatio(insufficientRatio);
+    // }
+    
+    // // Test failures
+    // function testFailMintZero() public {
+    //     vm.prank(alice);
+    //     basketToken.mint{value: 0}(); // Should revert with NoEthSent error
+    // }
+    
+    // function testFailBurnZero() public {
+    //     vm.prank(alice);
+    //     basketToken.burn(0); // Should revert with ZeroAmount error
+    // }
+    
+    // function testFailBurnTooMuch() public {
+    //     vm.prank(alice);
+    //     basketToken.mint{value: 1 ether}();
+    //     uint256 balance = basketToken.balanceOf(alice);
+        
+    //     vm.prank(alice);
+    //     basketToken.burn(balance + 1); // Should revert with InsufficientBalance error
+    // }
+    
+    // function testFailInvalidBasketComposition() public {
+    //     // Total percentage should be 10000 basis points (100%)
+    //     vm.prank(owner);
+    //     vm.expectRevert(BasketToken.InvalidBasketComposition.selector);
+    //     basketToken.updateBasketComposition(4000, 4000, 3000); // Total is 110%
+    // }
+    
+    // // Test complex scenario with price changes
+    // function testPriceChangesScenario() public {
+    //     // Initial mint
+    //     vm.startPrank(alice);
+    //     basketToken.mint{value: 1 ether}();
+    //     uint256 aliceTokens = basketToken.balanceOf(alice);
+    //     vm.stopPrank();
+        
+    //     // Record initial basket value
+    //     uint256 initialBasketValue = basketToken.getBasketValuePerToken();
+        
+    //     // Simulate market changes
+    //     goldPriceFeed.setPrice(initialGoldPrice * 12 / 10); // Gold up 20%
+    //     btcPriceFeed.setPrice(initialBtcPrice * 8 / 10);   // BTC down 20%
+    //     ethUsdPriceFeed.setPrice(initialEthUsdPrice * 9 / 10); // ETH down 10%
+        
+    //     // New basket value should reflect these changes
+    //     uint256 newBasketValue = basketToken.getBasketValuePerToken();
+        
+    //     // Expected change: 
+    //     // Gold: +20% * 40% weight = +8%
+    //     // BTC: -20% * 40% weight = -8%
+    //     // USDC: no change * 20% weight = 0%
+    //     // Net change: approximately 0%
+        
+    //     // Allow for some calculation variance
+    //     assertApproxEqRel(newBasketValue, initialBasketValue, 0.05e18); // 5% tolerance
+        
+    //     // Now Bob mints with new prices
+    //     vm.startPrank(bob);
+    //     basketToken.mint{value: 1 ether}();
+    //     uint256 bobTokens = basketToken.balanceOf(bob);
+    //     vm.stopPrank();
+        
+    //     // Due to ETH price being 10% lower, Bob should get approximately 10% more tokens than Alice did
+    //     assertApproxEqRel(bobTokens, aliceTokens * 110 / 100, 0.05e18); // 5% tolerance
+        
+    //     // Alice burns her tokens
+    //     vm.prank(alice);
+    //     basketToken.burn(aliceTokens);
+        
+    //     // Bob burns his tokens
+    //     vm.prank(bob);
+    //     basketToken.burn(bobTokens);
+        
+    //     // Contract should have minimal balance left (just some dust from rounding)
+    //     assertLt(address(basketToken).balance, 0.01 ether);
+    // }
 }
